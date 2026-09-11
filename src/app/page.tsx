@@ -1,103 +1,135 @@
-import Image from "next/image";
+"use client";
+
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const router = useRouter();
+  const [isStarting, setIsStarting] = useState(false);
+const flashSoundRef = useRef<HTMLAudioElement | null>(null);
+  function handleStartDiagnostic() {
+  if (isStarting) return;
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  setIsStarting(true);
+
+  if (flashSoundRef.current) {
+    flashSoundRef.current.currentTime = 0;
+    flashSoundRef.current.play().catch((error) => {
+      console.error("Erro ao reproduzir o som do flash:", error);
+    });
+  }
+
+  window.setTimeout(() => {
+  router.push("/diagnostico");
+}, 900);
+}
+
+  return (
+    <main className="relative min-h-screen overflow-hidden bg-[#050507] text-white">
+      <audio
+  ref={flashSoundRef}
+  src="/sounds/flash.mp3"
+  preload="auto"
+/>
+      {/* Fundo tecnológico */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-1/2 top-[-20%] h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[#00B8FF]/15 blur-[140px]" />
+
+        <div className="absolute bottom-[-20%] right-[-10%] h-[500px] w-[500px] rounded-full bg-[#8A2EFF]/15 blur-[140px]" />
+
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:70px_70px]" />
+      </div>
+
+      {/* Conteúdo */}
+      <section className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-6 py-16 text-center">
+        {/* Marca */}
+        <div className="mb-10 flex items-center gap-3">
+          <div className="h-3 w-3 rounded-full bg-[#00B8FF] shadow-[0_0_20px_#00B8FF]" />
+
+          <span className="text-sm font-semibold tracking-[0.35em] text-white/60">
+            ENPLICA
+          </span>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+
+        {/* Badge */}
+        <div className="mb-8 rounded-full border border-[#00B8FF]/30 bg-[#00B8FF]/5 px-5 py-2 text-sm font-medium text-[#7DDAFF] backdrop-blur-xl">
+          DIAGNÓSTICO ESTRATÉGICO EMPRESARIAL
+        </div>
+
+        {/* Título */}
+        <h1 className="max-w-4xl text-5xl font-bold leading-[0.95] tracking-[-0.04em] sm:text-7xl lg:text-8xl">
+          Faça um
+          <span className="block bg-gradient-to-r from-[#00B8FF] via-white to-[#8A2EFF] bg-clip-text text-transparent">
+            RAIO-X
+          </span>
+          do seu negócio.
+        </h1>
+
+        {/* Descrição */}
+        <p className="mt-8 max-w-2xl text-lg leading-relaxed text-white/60 sm:text-xl">
+          Descubra onde sua empresa está perdendo{" "}
+          <span className="font-semibold text-white">tempo</span>,{" "}
+          <span className="font-semibold text-white">dinheiro</span> e{" "}
+          <span className="font-semibold text-white">oportunidades</span>.
+        </p>
+
+        <p className="mt-4 max-w-xl text-base leading-relaxed text-white/40">
+          Um diagnóstico estratégico baseado em sete áreas fundamentais
+          para entender onde agir primeiro.
+        </p>
+
+        {/* Indicadores */}
+        <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-8 py-5 backdrop-blur-xl">
+            <div className="text-2xl font-bold text-[#00B8FF]">7</div>
+
+            <div className="mt-1 text-sm text-white/50">
+              Áreas analisadas
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-8 py-5 backdrop-blur-xl">
+            <div className="text-2xl font-bold text-white">21</div>
+
+            <div className="mt-1 text-sm text-white/50">
+              Perguntas estratégicas
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-8 py-5 backdrop-blur-xl">
+            <div className="text-2xl font-bold text-[#8A2EFF]">∞</div>
+
+            <div className="mt-1 text-sm text-white/50">
+              Possibilidades de evolução
+            </div>
+          </div>
+        </div>
+
+        {/* Botão */}
+        <button
+          type="button"
+          onClick={handleStartDiagnostic}
+          disabled={isStarting}
+          className="group relative mt-12 overflow-hidden rounded-2xl bg-gradient-to-r from-[#00B8FF] to-[#8A2EFF] px-10 py-5 text-base font-bold text-white shadow-[0_0_50px_rgba(0,184,255,0.25)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_80px_rgba(138,46,255,0.35)] active:scale-[0.98] disabled:cursor-not-allowed"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          <span className="relative z-10">
+            {isStarting
+              ? "INICIANDO ANÁLISE..."
+              : "INICIAR MEU DIAGNÓSTICO"}
+          </span>
+
+          <span className="absolute inset-0 translate-x-[-100%] bg-white/20 transition-transform duration-700 group-hover:translate-x-[100%]" />
+        </button>
+
+        <p className="mt-5 text-xs tracking-wide text-white/30">
+          LEVA APENAS ALGUNS MINUTOS
+        </p>
+      </section>
+
+      {/* FLASH CINEMATOGRÁFICO */}
+      {isStarting && (
+  <div className="enplica-flash pointer-events-none fixed inset-0 z-50" />
+)}
+    </main>
   );
 }
