@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -202,70 +201,23 @@ export default function ResultadoPage() {
 
       <section className="relative z-10 mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-12 lg:px-10">
         {/* HEADER */}
-        <header className="flex items-center justify-end border-b border-white/[0.06] pb-6">
+        <header className="flex items-center justify-between border-b border-white/[0.06] pb-6">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="h-2.5 w-2.5 rounded-full bg-[#00B8FF] shadow-[0_0_18px_#00B8FF]" />
+
+              <div className="absolute inset-0 h-2.5 w-2.5 animate-ping rounded-full bg-[#00B8FF]/30" />
+            </div>
+
+            <span className="text-sm font-bold tracking-[0.35em] text-white/70">
+              ENPLICA
+            </span>
+          </div>
+
           <span className="hidden text-[10px] font-medium tracking-[0.25em] text-white/30 sm:block">
             RAIO-X EMPRESARIAL
           </span>
         </header>
-
-        {/* LOGOS — PAINEL DE RAIO-X */}
-        <div className="pointer-events-none fixed inset-x-0 top-5 z-50 flex items-start justify-between px-4 sm:px-7 lg:px-10">
-
-          {/* NEXA — LADO ESQUERDO */}
-          <div className="group pointer-events-auto relative -translate-x-[4mm]">
-            <div className="absolute -inset-3 rounded-2xl border border-[#00B8FF]/0 bg-[#00B8FF]/0 opacity-0 blur-xl transition-all duration-500 group-hover:border-[#00B8FF]/30 group-hover:bg-[#00B8FF]/10 group-hover:opacity-100" />
-
-            <div className="relative flex h-[88px] w-[160px] items-center justify-center overflow-hidden rounded-2xl border border-white/[0.025] bg-white/[0.008] opacity-[0.06] backdrop-blur-md transition-all duration-500 group-hover:border-[#00B8FF]/40 group-hover:bg-black/60 group-hover:opacity-100 group-hover:shadow-[0_0_35px_rgba(0,184,255,0.18)] sm:h-[88px] sm:w-[160px]">
-
-              <div className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-                <div className="absolute left-0 top-0 h-px w-full bg-gradient-to-r from-transparent via-[#00B8FF] to-transparent" />
-                <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-[#8A2EFF] to-transparent" />
-                <div className="absolute left-0 top-0 h-full w-px bg-gradient-to-b from-[#00B8FF] via-transparent to-[#8A2EFF]" />
-              </div>
-
-              <Image
-                src="/logos/nexa.png"
-                alt="Nexa"
-                width={150}
-                height={80}
-                priority
-                className="relative h-auto w-[86px] object-contain transition-all duration-500 group-hover:w-[96px] sm:w-[103px] sm:group-hover:w-[114px]"
-              />
-
-              <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[7px] font-bold tracking-[0.25em] text-[#7DDAFF] opacity-0 transition-all duration-300 group-hover:bottom-1 group-hover:opacity-80">
-                NEXA · IA
-              </span>
-            </div>
-          </div>
-
-          {/* SIM — LADO DIREITO */}
-          <div className="group pointer-events-auto relative">
-            <div className="absolute -inset-3 rounded-2xl border border-[#8A2EFF]/0 bg-[#8A2EFF]/0 opacity-0 blur-xl transition-all duration-500 group-hover:border-[#8A2EFF]/30 group-hover:bg-[#8A2EFF]/10 group-hover:opacity-100" />
-
-            <div className="relative flex h-[88px] w-[160px] items-center justify-center overflow-hidden rounded-2xl border border-white/[0.025] bg-white/[0.008] opacity-[0.06] backdrop-blur-md transition-all duration-500 group-hover:border-[#8A2EFF]/40 group-hover:bg-black/60 group-hover:opacity-100 group-hover:shadow-[0_0_35px_rgba(138,46,255,0.18)] sm:h-[88px] sm:w-[160px]">
-
-              <div className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-                <div className="absolute left-0 top-0 h-px w-full bg-gradient-to-r from-transparent via-[#8A2EFF] to-transparent" />
-                <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-[#00B8FF] to-transparent" />
-                <div className="absolute right-0 top-0 h-full w-px bg-gradient-to-b from-[#8A2EFF] via-transparent to-[#00B8FF]" />
-              </div>
-
-              <Image
-                src="/logos/sim.png"
-                alt="SIM Gestão"
-                width={150}
-                height={80}
-                priority
-                className="relative -translate-y-[4mm] h-auto w-[66px] object-contain transition-all duration-500 group-hover:w-[74px] sm:w-[80px] sm:group-hover:w-[88px]"
-              />
-
-              <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[7px] font-bold tracking-[0.25em] text-[#C69CFF] opacity-0 transition-all duration-300 group-hover:bottom-1 group-hover:opacity-80">
-                SIM · GESTÃO
-              </span>
-            </div>
-          </div>
-
-        </div>
 
         {/* HERO */}
         <section className="pt-20 text-center sm:pt-28">
@@ -320,9 +272,7 @@ export default function ResultadoPage() {
                   PONTUAÇÃO GERAL
                 </div>
 
-                <div
-  className={`mt-4 text-5xl font-bold tracking-tight sm:text-6xl ${overallHealth.text}`}
->
+                <div className="mt-4 text-5xl font-bold tracking-tight sm:text-6xl">
                   {result.totalScore}
                   <span className="text-white/25">
                     /{result.maxScore}
@@ -365,8 +315,8 @@ export default function ResultadoPage() {
             </div>
 
             <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">
-  Veja seu negócio por inteiro.
-</h2>
+              Veja seu negócio por inteiro.
+            </h2>
 
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-white/45 sm:text-lg">
               As sete áreas mostram onde sua empresa está saudável
@@ -507,9 +457,7 @@ export default function ResultadoPage() {
                           {area.name}
                         </h3>
 
-                        <div
-                          className={`mt-2 text-xs font-semibold ${status.score}`}
-                        >
+                        <div className="mt-2 text-xs text-white/45">
                           {areaResult.score}/{areaResult.maxScore} pontos
                         </div>
                       </div>
@@ -533,15 +481,13 @@ export default function ResultadoPage() {
                     </div>
                   </div>
 
-                  <div
-                    className={`mt-4 flex items-center justify-between rounded-lg border px-3 py-2 ${status.className}`}
-                  >
-                    <span className="text-[10px] font-semibold tracking-[0.15em] text-white/50">
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="text-[10px] font-semibold tracking-[0.15em] text-white/25">
                       NÍVEL DA ÁREA
                     </span>
 
                     <span
-                      className={`text-sm font-extrabold ${status.score}`}
+                      className={`text-xs font-bold ${status.score}`}
                     >
                       {areaResult.score}/9
                     </span>
@@ -774,22 +720,22 @@ export default function ResultadoPage() {
 
                 <div className="mt-7 space-y-3 text-left text-sm text-white/65">
                   <div className="flex gap-3 py-1">
-                    <span className="mr-1 text-[#00B8FF]">?</span>
+                    <span className="mr-1 text-[#00B8FF]">✓</span>
                     <span>Aprofundamento da principal dor</span>
                   </div>
 
                   <div className="flex gap-3 py-1">
-                    <span className="mr-1 text-[#00B8FF]">?</span>
+                    <span className="mr-1 text-[#00B8FF]">✓</span>
                     <span>Identificação do processo envolvido</span>
                   </div>
 
                   <div className="flex gap-3 py-1">
-                    <span className="mr-1 text-[#00B8FF]">?</span>
+                    <span className="mr-1 text-[#00B8FF]">✓</span>
                     <span>Definição do próximo procedimento</span>
                   </div>
 
                   <div className="flex gap-3 py-1">
-                    <span className="mr-1 text-[#00B8FF]">?</span>
+                    <span className="mr-1 text-[#00B8FF]">✓</span>
                     <span>Dados para uma solução específica</span>
                   </div>
                 </div>
@@ -801,7 +747,7 @@ export default function ResultadoPage() {
                 className="mt-8 rounded-2xl bg-gradient-to-r from-[#00B8FF] to-[#8A2EFF] px-8 py-4 text-sm font-bold text-white shadow-[0_10px_40px_rgba(0,184,255,0.15)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_15px_50px_rgba(0,184,255,0.22)]"
               >
                 {copied
-                  ? "SOLICITAÇÃO COPIADA ?"
+                  ? "SOLICITAÇÃO COPIADA ✓"
                   : "QUERO AGENDAR MINHA CONSULTA"}
               </button>
 
@@ -839,16 +785,3 @@ export default function ResultadoPage() {
     </main>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

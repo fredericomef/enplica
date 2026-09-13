@@ -1,40 +1,36 @@
-﻿"use client";
+"use client";
 
-import Image from "next/image";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
-  const flashSoundRef = useRef<HTMLAudioElement | null>(null);
-
+const flashSoundRef = useRef<HTMLAudioElement | null>(null);
   function handleStartDiagnostic() {
-    if (isStarting) return;
+  if (isStarting) return;
 
-    setIsStarting(true);
+  setIsStarting(true);
 
-    if (flashSoundRef.current) {
-      flashSoundRef.current.currentTime = 0;
-
-      flashSoundRef.current.play().catch((error) => {
-        console.error("Erro ao reproduzir o som do flash:", error);
-      });
-    }
-
-    window.setTimeout(() => {
-      router.push("/diagnostico");
-    }, 900);
+  if (flashSoundRef.current) {
+    flashSoundRef.current.currentTime = 0;
+    flashSoundRef.current.play().catch((error) => {
+      console.error("Erro ao reproduzir o som do flash:", error);
+    });
   }
+
+  window.setTimeout(() => {
+  router.push("/diagnostico");
+}, 900);
+}
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#050507] text-white">
       <audio
-        ref={flashSoundRef}
-        src="/sounds/flash.mp3"
-        preload="auto"
-      />
-
+  ref={flashSoundRef}
+  src="/sounds/flash.mp3"
+  preload="auto"
+/>
       {/* Fundo tecnológico */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-[-20%] h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[#00B8FF]/15 blur-[140px]" />
@@ -44,39 +40,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:70px_70px]" />
       </div>
 
+      {/* Conteúdo */}
       <section className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-6 py-16 text-center">
-
-        {/* Logos parceiras */}
-        <div className="mb-10 flex items-center justify-center gap-5 sm:gap-8">
-
-          <div className="flex h-16 w-32 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] px-4 backdrop-blur-xl sm:h-20 sm:w-40">
-            <Image
-              src="/logos/sim.png"
-              alt="SIM"
-              width={150}
-              height={80}
-              className="max-h-12 w-auto object-contain sm:max-h-14"
-              priority
-            />
-          </div>
-
-          <div className="h-10 w-px bg-gradient-to-b from-transparent via-white/30 to-transparent" />
-
-          <div className="flex h-16 w-32 items-center justify-center rounded-2xl border border-[#00B8FF]/20 bg-white/[0.04] px-4 backdrop-blur-xl sm:h-20 sm:w-40">
-            <Image
-              src="/logos/nexa.png"
-              alt="Nexa"
-              width={150}
-              height={80}
-              className="mt-3 max-h-[105px] w-auto object-contain sm:mt-4 sm:max-h-[119px]"
-              priority
-            />
-          </div>
-
-        </div>
-
-        {/* Marca ENPLICA */}
-        <div className="mb-8 flex items-center gap-3">
+        {/* Marca */}
+        <div className="mb-10 flex items-center gap-3">
           <div className="h-3 w-3 rounded-full bg-[#00B8FF] shadow-[0_0_20px_#00B8FF]" />
 
           <span className="text-sm font-semibold tracking-[0.35em] text-white/60">
@@ -157,19 +124,12 @@ export default function Home() {
         <p className="mt-5 text-xs tracking-wide text-white/30">
           LEVA APENAS ALGUNS MINUTOS
         </p>
-
       </section>
 
-      {/* Flash cinematográfico */}
+      {/* FLASH CINEMATOGRÁFICO */}
       {isStarting && (
-        <div className="enplica-flash pointer-events-none fixed inset-0 z-50" />
-      )}
+  <div className="enplica-flash pointer-events-none fixed inset-0 z-50" />
+)}
     </main>
   );
 }
-
-
-
-
-
-

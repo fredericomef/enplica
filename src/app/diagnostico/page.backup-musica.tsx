@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -19,9 +19,6 @@ import type {
 export default function DiagnosticoPage() {
   const router = useRouter();
 
-  const musicRef = useRef<HTMLAudioElement | null>(null);
-
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<AnswerValue[]>([]);
   const [isAnswering, setIsAnswering] = useState(false);
@@ -40,48 +37,6 @@ export default function DiagnosticoPage() {
 
   const progress =
     ((currentQuestion + 1) / totalQuestions) * 100;
-
-  useEffect(() => {
-    const music = musicRef.current;
-
-    if (!music) return;
-
-    music.volume = 0.02;
-
-    const startMusic = async () => {
-      try {
-        await music.play();
-        setIsMusicPlaying(true);
-      } catch {
-        console.log(
-          "A reprodução automática foi bloqueada pelo navegador.",
-        );
-      }
-    };
-
-    startMusic();
-
-    return () => {
-      music.pause();
-      music.currentTime = 0;
-    };
-  }, []);
-
-  function toggleMusic() {
-    const music = musicRef.current;
-
-    if (!music) return;
-
-    if (music.paused) {
-      music
-        .play()
-        .then(() => setIsMusicPlaying(true))
-        .catch(() => setIsMusicPlaying(false));
-    } else {
-      music.pause();
-      setIsMusicPlaying(false);
-    }
-  }
 
   function buildDiagnosticAnswers(
     allAnswers: AnswerValue[],
@@ -129,12 +84,6 @@ export default function DiagnosticoPage() {
         JSON.stringify(result),
       );
 
-      if (musicRef.current) {
-        musicRef.current.pause();
-        musicRef.current.currentTime = 0;
-      }
-
-      setIsMusicPlaying(false);
       setIsAnalyzing(true);
 
       window.setTimeout(() => {
@@ -199,26 +148,6 @@ export default function DiagnosticoPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#050507] text-white">
-      <audio
-        ref={musicRef}
-        src="/sounds/trilha-enplica.mp3"
-        loop
-        preload="auto"
-      />
-
-      <button
-        type="button"
-        onClick={toggleMusic}
-        className="fixed bottom-5 right-5 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/40 text-lg text-white/60 backdrop-blur-xl transition-all hover:border-[#00B8FF]/40 hover:bg-[#00B8FF]/10 hover:text-[#7DDAFF]"
-        aria-label={
-          isMusicPlaying
-            ? "Pausar música"
-            : "Reproduzir música"
-        }
-      >
-        {isMusicPlaying ? "🔊" : "🔇"}
-      </button>
-
       {/* FUNDO */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-[5%] top-[5%] h-[520px] w-[520px] rounded-full bg-[#00B8FF]/10 blur-[160px]" />
@@ -284,9 +213,11 @@ export default function DiagnosticoPage() {
           key={currentQuestion}
           className="flex flex-1 flex-col justify-center py-14"
         >
+
           {/* ÁREA */}
           <div>
             <div className="inline-flex items-center rounded-full border border-[#00B8FF]/20 bg-[#00B8FF]/5 px-4 py-2">
+
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#00B8FF]/10 text-[10px] font-bold text-[#7DDAFF]">
                 {current.areaId}
               </span>
@@ -294,6 +225,7 @@ export default function DiagnosticoPage() {
               <span className="ml-3 whitespace-nowrap text-[10px] font-bold tracking-[0.18em] text-[#7DDAFF]">
                 {current.areaName.toUpperCase()}
               </span>
+
             </div>
           </div>
 
@@ -308,8 +240,8 @@ export default function DiagnosticoPage() {
             </h1>
 
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/40 sm:text-lg">
-              Responda de acordo com a realidade atual do seu negócio.
-              Não existem respostas certas ou erradas.
+              Responda de acordo com a realidade atual do seu
+              negócio. Não existem respostas certas ou erradas.
             </p>
           </div>
 
@@ -321,7 +253,9 @@ export default function DiagnosticoPage() {
                 type="button"
                 disabled={isAnswering}
                 onClick={() =>
-                  handleAnswer(option.value as AnswerValue)
+                  handleAnswer(
+                    option.value as AnswerValue,
+                  )
                 }
                 className="group relative flex min-h-[68px] items-center gap-5 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.025] px-5 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-[#00B8FF]/40 hover:bg-[#00B8FF]/[0.07] hover:shadow-[0_15px_45px_rgba(0,184,255,0.07)] disabled:cursor-not-allowed disabled:opacity-50 sm:px-6"
               >
@@ -352,21 +286,20 @@ export default function DiagnosticoPage() {
                 ← ANTERIOR
               </button>
             ) : (
-              <div />
+              <span />
             )}
 
-            <div className="text-[10px] font-semibold tracking-[0.2em] text-white/20">
+            <div className="text-[10px] tracking-[0.18em] text-white/20">
               RESPOSTA {currentQuestion + 1}
             </div>
           </div>
         </div>
 
-        {/* RODAPÉ */}
-        <footer className="border-t border-white/[0.06] pt-6 text-center">
-          <div className="text-[9px] font-semibold tracking-[0.28em] text-white/20">
-            DIAGNÓSTICO ESTRATÉGICO EMPRESARIAL
-          </div>
+        {/* FOOTER */}
+        <footer className="border-t border-white/[0.05] pt-5 text-center text-[9px] tracking-[0.25em] text-white/20">
+          DIAGNÓSTICO ESTRATÉGICO EMPRESARIAL
         </footer>
+
       </section>
     </main>
   );

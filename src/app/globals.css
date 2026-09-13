@@ -1,3 +1,5 @@
+﻿@import "tailwindcss";
+
 :root {
   --background: #050507;
   --background-secondary: #0b0b12;
@@ -59,7 +61,7 @@ button {
 }
 
 /* =========================================
-   ENPLICA — FLASH CINEMATOGRÁFICO
+   ENPLICA â€” FLASH CINEMATOGRÃFICO
 ========================================= */
 
 .enplica-flash {
