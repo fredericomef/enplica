@@ -17,7 +17,6 @@ export default function ResultadoPage() {
   const router = useRouter();
 
   const [result, setResult] = useState<DiagnosticResult | null>(null);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const storedResult = sessionStorage.getItem(
@@ -131,20 +130,14 @@ export default function ResultadoPage() {
     };
   }
 
-  async function handleConsultationRequest() {
+  function handleConsultationRequest() {
     const message =
       "Olá! Fiz o Raio-X Empresarial da ENPLICA e quero agendar minha Consulta de Gestão de R$ 220.";
 
-    try {
-      await navigator.clipboard.writeText(message);
-      setCopied(true);
+    const whatsappUrl =
+      `https://wa.me/553592183654?text=${encodeURIComponent(message)}`;
 
-      window.setTimeout(() => {
-        setCopied(false);
-      }, 3000);
-    } catch {
-      setCopied(false);
-    }
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
   }
 
   if (!result) {
@@ -800,9 +793,7 @@ export default function ResultadoPage() {
                 onClick={handleConsultationRequest}
                 className="mt-8 rounded-2xl bg-gradient-to-r from-[#00B8FF] to-[#8A2EFF] px-8 py-4 text-sm font-bold text-white shadow-[0_10px_40px_rgba(0,184,255,0.15)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_15px_50px_rgba(0,184,255,0.22)]"
               >
-                {copied
-                  ? "SOLICITAÇÃO COPIADA ?"
-                  : "QUERO AGENDAR MINHA CONSULTA"}
+                QUERO AGENDAR MINHA CONSULTA
               </button>
 
               <p className="mx-auto mt-5 max-w-lg text-xs leading-6 text-white/30">
@@ -810,13 +801,6 @@ export default function ResultadoPage() {
                 específica sobre o próximo passo. Nenhuma solução é
                 construída antes dessa etapa.
               </p>
-
-              {copied && (
-                <div className="mx-auto mt-5 max-w-md rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-3 text-xs text-green-300">
-                  Mensagem copiada. Ela poderá ser usada no canal de
-                  atendimento da ENPLICA.
-                </div>
-              )}
             </div>
           </div>
         </section>
@@ -839,6 +823,8 @@ export default function ResultadoPage() {
     </main>
   );
 }
+
+
 
 
 
