@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -14,7 +14,19 @@ import type {
   AnswerValue,
   AreaId,
   DiagnosticAnswers,
+  DiagnosticResult,
 } from "@/domain/diagnostic/diagnostic.types";
+
+type Screen = "diagnostic" | "analyzing" | "registration" | "confirmation";
+
+type FormData = {
+  name: string;
+  email: string;
+  whatsapp: string;
+  birthDate: string;
+  role: string;
+  cnpj: string;
+};
 
 export default function DiagnosticoPage() {
   const router = useRouter();
@@ -25,7 +37,26 @@ export default function DiagnosticoPage() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<AnswerValue[]>([]);
   const [isAnswering, setIsAnswering] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const [screen, setScreen] = useState<Screen>("diagnostic");
+
+  const [diagnosticResult, setDiagnosticResult] =
+    useState<DiagnosticResult | null>(null);
+
+  const [diagnosticAnswers, setDiagnosticAnswers] =
+    useState<DiagnosticAnswers | null>(null);
+
+  const [formData, setFormData] = useState<FormData>({
+    name: "",
+    email: "",
+    whatsapp: "",
+    birthDate: "",
+    role: "",
+    cnpj: "",
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const allQuestions = ENPLICA_AREAS.flatMap((area) =>
     area.questions.map((question) => ({
@@ -101,8 +132,22 @@ export default function DiagnosticoPage() {
     return diagnosticAnswers;
   }
 
+  function stopMusic() {
+    if (musicRef.current) {
+      musicRef.current.pause();
+      musicRef.current.currentTime = 0;
+    }
+
+    setIsMusicPlaying(false);
+  }
+
   function handleAnswer(value: AnswerValue) {
-    if (isAnswering || isAnalyzing) return;
+    if (
+      isAnswering ||
+      screen !== "diagnostic"
+    ) {
+      return;
+    }
 
     setIsAnswering(true);
 
@@ -118,28 +163,24 @@ export default function DiagnosticoPage() {
         return;
       }
 
-      const diagnosticAnswers =
+      const builtAnswers =
         buildDiagnosticAnswers(newAnswers);
 
       const result =
-        calculateDiagnostic(diagnosticAnswers);
+        calculateDiagnostic(builtAnswers);
 
-      sessionStorage.setItem(
-        "enplica-diagnostic-result",
-        JSON.stringify(result),
-      );
+      setDiagnosticAnswers(builtAnswers);
+      setDiagnosticResult(result);
 
-      if (musicRef.current) {
-        musicRef.current.pause();
-        musicRef.current.currentTime = 0;
-      }
+      stopMusic();
 
-      setIsMusicPlaying(false);
-      setIsAnalyzing(true);
+      setScreen("analyzing");
 
       window.setTimeout(() => {
-        router.push("/resultado");
+        setScreen("registration");
       }, 1800);
+
+      setIsAnswering(false);
     }, 350);
   }
 
@@ -147,7 +188,7 @@ export default function DiagnosticoPage() {
     if (
       currentQuestion === 0 ||
       isAnswering ||
-      isAnalyzing
+      screen !== "diagnostic"
     ) {
       return;
     }
@@ -155,7 +196,125 @@ export default function DiagnosticoPage() {
     setCurrentQuestion((previous) => previous - 1);
   }
 
-  if (isAnalyzing) {
+  function updateForm(
+    field: keyof FormData,
+    value: string,
+  ) {
+    setFormData((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+
+    if (formError) {
+      setFormError("");
+    }
+  }
+
+  async function handleRegistration(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    if (
+      !diagnosticResult ||
+      !diagnosticAnswers
+    ) {
+      setFormError(
+        "Não foi possível localizar os dados do diagnóstico. Refaça o Raio-X.",
+      );
+      return;
+    }
+
+    if (
+      !formData.name.trim() ||
+      !formData.email.trim() ||
+      !formData.whatsapp.trim()
+    ) {
+      setFormError(
+        "Preencha nome, e-mail e WhatsApp para continuar.",
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+    setFormError("");
+
+    try {
+      const response = await fetch(
+        "/api/clients",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            whatsapp: formData.whatsapp,
+            birthDate:
+              formData.birthDate || null,
+            role: formData.role || null,
+            cnpj: formData.cnpj || null,
+            diagnostic: {
+              overallScore: diagnosticResult.totalScore,
+              maxScore:
+                diagnosticResult.maxScore,
+              percentage:
+                diagnosticResult.percentage,
+              priorityArea: diagnosticResult.priorities[0]?.areaId ?? null,
+              answers: diagnosticAnswers,
+              areas:
+                diagnosticResult.areas ?? [],
+            },
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error ||
+            "Não foi possível salvar seu cadastro.",
+        );
+      }
+
+      sessionStorage.setItem(
+        "enplica-client-id",
+        data.clientId,
+      );
+
+      sessionStorage.setItem(
+        "enplica-diagnostic-id",
+        data.diagnosticId,
+      );
+
+      setScreen("confirmation");
+    } catch (error) {
+      console.error(error);
+
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível concluir o cadastro. Tente novamente.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function releaseDiagnostic() {
+    if (!diagnosticResult) return;
+
+    sessionStorage.setItem(
+      "enplica-diagnostic-result",
+      JSON.stringify(diagnosticResult),
+    );
+
+    router.push("/resultado");
+  }
+
+  if (screen === "analyzing") {
     return (
       <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#050507] text-white">
         <div className="pointer-events-none absolute inset-0">
@@ -197,6 +356,276 @@ export default function DiagnosticoPage() {
     );
   }
 
+  if (screen === "registration") {
+    return (
+      <main className="relative min-h-screen overflow-hidden bg-[#050507] text-white">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-[5%] top-[5%] h-[520px] w-[520px] rounded-full bg-[#00B8FF]/10 blur-[160px]" />
+
+          <div className="absolute bottom-0 right-[-5%] h-[520px] w-[520px] rounded-full bg-[#8A2EFF]/10 blur-[160px]" />
+
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.018)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.018)_1px,transparent_1px)] bg-[size:70px_70px]" />
+        </div>
+
+        <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-3xl flex-col px-5 py-8 sm:px-8 sm:py-12">
+          <header className="flex items-center justify-between border-b border-white/[0.06] pb-6">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="h-2.5 w-2.5 rounded-full bg-[#00B8FF] shadow-[0_0_20px_#00B8FF]" />
+
+                <div className="absolute inset-0 h-2.5 w-2.5 animate-ping rounded-full bg-[#00B8FF]/30" />
+              </div>
+
+              <div>
+                <div className="text-sm font-bold tracking-[0.35em] text-white/70">
+                  ENPLICA
+                </div>
+
+                <div className="mt-1 text-[9px] tracking-[0.2em] text-white/25">
+                  RAIO-X EMPRESARIAL
+                </div>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <div className="text-[10px] font-semibold tracking-[0.2em] text-[#7DDAFF]">
+                DIAGNÓSTICO PRONTO
+              </div>
+            </div>
+          </header>
+
+          <div className="flex flex-1 flex-col justify-center py-12">
+            <div className="mx-auto w-full max-w-2xl">
+              <div className="text-[10px] font-bold tracking-[0.3em] text-[#7DDAFF]">
+                LIBERE SEU RESULTADO
+              </div>
+
+              <h1 className="mt-5 text-3xl font-bold leading-tight tracking-[-0.035em] sm:text-5xl">
+                Seu Raio-X está pronto.
+              </h1>
+
+              <p className="mt-5 max-w-xl text-base leading-relaxed text-white/40 sm:text-lg">
+                Preencha seus dados para registrarmos seu diagnóstico
+                e liberar seu resultado completo.
+              </p>
+
+              <form
+                onSubmit={handleRegistration}
+                className="mt-10 grid gap-4"
+              >
+                <div>
+                  <label className="mb-2 block text-[10px] font-semibold tracking-[0.18em] text-white/40">
+                    NOME *
+                  </label>
+
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(event) =>
+                      updateForm(
+                        "name",
+                        event.target.value,
+                      )
+                    }
+                    placeholder="Seu nome completo"
+                    autoComplete="name"
+                    required
+                    className="w-full rounded-2xl border border-white/10 bg-white/[0.035] px-5 py-4 text-white outline-none transition placeholder:text-white/20 focus:border-[#00B8FF]/50 focus:bg-[#00B8FF]/[0.04]"
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-[10px] font-semibold tracking-[0.18em] text-white/40">
+                      E-MAIL *
+                    </label>
+
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(event) =>
+                        updateForm(
+                          "email",
+                          event.target.value,
+                        )
+                      }
+                      placeholder="voce@empresa.com"
+                      autoComplete="email"
+                      required
+                      className="w-full rounded-2xl border border-white/10 bg-white/[0.035] px-5 py-4 text-white outline-none transition placeholder:text-white/20 focus:border-[#00B8FF]/50 focus:bg-[#00B8FF]/[0.04]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-[10px] font-semibold tracking-[0.18em] text-white/40">
+                      CELULAR / WHATSAPP *
+                    </label>
+
+                    <input
+                      type="tel"
+                      value={formData.whatsapp}
+                      onChange={(event) =>
+                        updateForm(
+                          "whatsapp",
+                          event.target.value,
+                        )
+                      }
+                      placeholder="(35) 99999-9999"
+                      autoComplete="tel"
+                      required
+                      className="w-full rounded-2xl border border-white/10 bg-white/[0.035] px-5 py-4 text-white outline-none transition placeholder:text-white/20 focus:border-[#00B8FF]/50 focus:bg-[#00B8FF]/[0.04]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-[10px] font-semibold tracking-[0.18em] text-white/40">
+                      DATA DE NASCIMENTO
+                    </label>
+
+                    <input
+                      type="date"
+                      value={formData.birthDate}
+                      onChange={(event) =>
+                        updateForm(
+                          "birthDate",
+                          event.target.value,
+                        )
+                      }
+                      autoComplete="bday"
+                      className="w-full rounded-2xl border border-white/10 bg-white/[0.035] px-5 py-4 text-white outline-none transition focus:border-[#00B8FF]/50 focus:bg-[#00B8FF]/[0.04]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-[10px] font-semibold tracking-[0.18em] text-white/40">
+                      CARGO
+                    </label>
+
+                    <input
+                      type="text"
+                      value={formData.role}
+                      onChange={(event) =>
+                        updateForm(
+                          "role",
+                          event.target.value,
+                        )
+                      }
+                      placeholder="Ex.: Sócio, Diretor, Gestor"
+                      autoComplete="organization-title"
+                      className="w-full rounded-2xl border border-white/10 bg-white/[0.035] px-5 py-4 text-white outline-none transition placeholder:text-white/20 focus:border-[#00B8FF]/50 focus:bg-[#00B8FF]/[0.04]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-[10px] font-semibold tracking-[0.18em] text-white/40">
+                    CNPJ <span className="text-white/20">(OPCIONAL)</span>
+                  </label>
+
+                  <input
+                    type="text"
+                    value={formData.cnpj}
+                    onChange={(event) =>
+                      updateForm(
+                        "cnpj",
+                        event.target.value,
+                      )
+                    }
+                    placeholder="00.000.000/0000-00"
+                    inputMode="numeric"
+                    className="w-full rounded-2xl border border-white/10 bg-white/[0.035] px-5 py-4 text-white outline-none transition placeholder:text-white/20 focus:border-[#00B8FF]/50 focus:bg-[#00B8FF]/[0.04]"
+                  />
+                </div>
+
+                {formError ? (
+                  <div className="rounded-2xl border border-red-500/20 bg-red-500/[0.06] px-5 py-4 text-sm text-red-300">
+                    {formError}
+                  </div>
+                ) : null}
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="mt-3 flex min-h-[62px] items-center justify-center rounded-2xl bg-gradient-to-r from-[#00B8FF] to-[#8A2EFF] px-6 text-sm font-bold tracking-[0.08em] text-white shadow-[0_15px_50px_rgba(0,184,255,0.15)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_60px_rgba(138,46,255,0.2)] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSubmitting
+                    ? "REGISTRANDO SEU DIAGNÓSTICO..."
+                    : "CONTINUAR"}
+                </button>
+
+                <p className="text-center text-[10px] leading-relaxed text-white/20">
+                  Seus dados serão utilizados para registrar seu
+                  diagnóstico e permitir o atendimento relacionado
+                  ao ENPLICA.
+                </p>
+              </form>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (screen === "confirmation") {
+    return (
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#050507] text-white">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 top-[35%] h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#00B8FF]/10 blur-[180px]" />
+
+          <div className="absolute bottom-[-10%] right-[-5%] h-[520px] w-[520px] rounded-full bg-[#8A2EFF]/10 blur-[160px]" />
+
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.018)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.018)_1px,transparent_1px)] bg-[size:70px_70px]" />
+        </div>
+
+        <section className="relative z-10 w-full max-w-2xl px-6 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-green-500/30 bg-green-500/10 shadow-[0_0_70px_rgba(34,197,94,0.12)]">
+            <div className="text-3xl text-green-300">
+              ✓
+            </div>
+          </div>
+
+          <div className="mt-10 text-[11px] font-bold tracking-[0.35em] text-[#7DDAFF]">
+            RAIO-X CONCLUÍDO
+          </div>
+
+          <h1 className="mt-5 text-3xl font-bold tracking-tight sm:text-5xl">
+            Seu diagnóstico está pronto.
+          </h1>
+
+          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/40 sm:text-lg">
+            Suas respostas foram registradas e sua análise
+            empresarial foi preparada.
+          </p>
+
+          <div className="mx-auto mt-8 max-w-md rounded-2xl border border-white/10 bg-white/[0.025] p-5">
+            <div className="text-[10px] font-semibold tracking-[0.2em] text-white/25">
+              PRÓXIMO PASSO
+            </div>
+
+            <div className="mt-2 text-sm text-white/60">
+              Libere agora seu Raio-X completo com pontuação,
+              radar das sete áreas e prioridades de evolução.
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={releaseDiagnostic}
+            className="mx-auto mt-8 flex min-h-[64px] w-full max-w-md items-center justify-center rounded-2xl bg-gradient-to-r from-[#00B8FF] to-[#8A2EFF] px-6 text-sm font-bold tracking-[0.08em] text-white shadow-[0_15px_50px_rgba(0,184,255,0.15)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_60px_rgba(138,46,255,0.2)]"
+          >
+            SIM, QUERO RECEBER MEU DIAGNÓSTICO
+          </button>
+
+          <p className="mt-5 text-[10px] text-white/20">
+            Seu resultado será liberado imediatamente.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#050507] text-white">
       <audio
@@ -219,7 +648,6 @@ export default function DiagnosticoPage() {
         {isMusicPlaying ? "🔊" : "🔇"}
       </button>
 
-      {/* FUNDO */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-[5%] top-[5%] h-[520px] w-[520px] rounded-full bg-[#00B8FF]/10 blur-[160px]" />
 
@@ -229,8 +657,6 @@ export default function DiagnosticoPage() {
       </div>
 
       <section className="relative z-10 mx-auto flex min-h-screen max-w-4xl flex-col px-5 py-7 sm:px-8 sm:py-10">
-
-        {/* HEADER */}
         <header className="flex items-center justify-between border-b border-white/[0.06] pb-6">
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -257,7 +683,6 @@ export default function DiagnosticoPage() {
           </div>
         </header>
 
-        {/* PROGRESSO */}
         <div className="mt-7">
           <div className="grid grid-cols-[1fr_auto] items-center gap-8">
             <div className="text-[10px] font-semibold tracking-[0.15em] text-[#7DDAFF]">
@@ -279,12 +704,10 @@ export default function DiagnosticoPage() {
           </div>
         </div>
 
-        {/* CONTEÚDO */}
         <div
           key={currentQuestion}
           className="flex flex-1 flex-col justify-center py-14"
         >
-          {/* ÁREA */}
           <div>
             <div className="inline-flex items-center rounded-full border border-[#00B8FF]/20 bg-[#00B8FF]/5 px-4 py-2">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#00B8FF]/10 text-[10px] font-bold text-[#7DDAFF]">
@@ -297,7 +720,6 @@ export default function DiagnosticoPage() {
             </div>
           </div>
 
-          {/* PERGUNTA */}
           <div className="mt-8">
             <div className="mb-4 text-[10px] font-semibold tracking-[0.25em] text-white/25">
               ANÁLISE EMPRESARIAL
@@ -313,7 +735,6 @@ export default function DiagnosticoPage() {
             </p>
           </div>
 
-          {/* RESPOSTAS */}
           <div className="mt-10 grid gap-3">
             {ANSWER_OPTIONS.map((option, index) => (
               <button
@@ -340,7 +761,6 @@ export default function DiagnosticoPage() {
             ))}
           </div>
 
-          {/* NAVEGAÇÃO */}
           <div className="mt-8 flex min-h-8 items-center justify-between">
             {currentQuestion > 0 ? (
               <button
@@ -349,7 +769,7 @@ export default function DiagnosticoPage() {
                 onClick={handlePrevious}
                 className="text-xs font-semibold tracking-[0.15em] text-white/30 transition-colors hover:text-white/70 disabled:opacity-30"
               >
-                ← ANTERIOR
+                ← VOLTAR
               </button>
             ) : (
               <div />
@@ -361,7 +781,6 @@ export default function DiagnosticoPage() {
           </div>
         </div>
 
-        {/* RODAPÉ */}
         <footer className="border-t border-white/[0.06] pt-6 text-center">
           <div className="text-[9px] font-semibold tracking-[0.28em] text-white/20">
             DIAGNÓSTICO ESTRATÉGICO EMPRESARIAL
@@ -371,3 +790,4 @@ export default function DiagnosticoPage() {
     </main>
   );
 }
+

@@ -12,6 +12,11 @@ import type {
 } from "@/domain/diagnostic/diagnostic.types";
 import { createActionPlan } from "@/domain/diagnostic/action-plan";
 import { DiagnosticRadarChart } from "@/components/diagnostic/DiagnosticRadarChart";
+import {
+  ENPLICA_SERVICES,
+  getNexaServicesForAreas,
+  type EnplicaService,
+} from "@/domain/services/services.config";
 
 export default function ResultadoPage() {
   const router = useRouter();
@@ -179,6 +184,119 @@ export default function ResultadoPage() {
   const treatGroup = actionPlan.groups.find(
     (group) => group.status === "TRATAR",
   );
+
+  const treatmentAreas = result.areas.filter(
+    (area) => area.status === "TRATAR",
+  );
+
+  const attentionAreas = result.areas.filter(
+    (area) => area.status === "ATENCAO",
+  );
+
+  const serviceAreaIds = (
+    treatmentAreas.length > 0
+      ? treatmentAreas
+      : attentionAreas
+  ).map((area) => area.areaId);
+
+  const simServices = ENPLICA_SERVICES.filter(
+    (service) =>
+      service.provider === "SIM" &&
+      service.areas.some((areaId) =>
+        serviceAreaIds.includes(areaId),
+      ) &&
+      !["CON-00", "CON-01", "MNT-01", "MNT-02"].includes(
+        service.code,
+      ),
+  );
+
+  const nexaServices = getNexaServicesForAreas(
+    serviceAreaIds,
+  );
+
+  function formatServicePrice(service: EnplicaService) {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      minimumFractionDigits: 2,
+    }).format(service.price);
+  }
+
+  function handleServiceQuote(service: EnplicaService) {
+    const message =
+      `Olá! Fiz o Raio-X Empresarial da ENPLICA e quero solicitar um orçamento para o serviço "${service.name}".`;
+
+    const whatsappUrl =
+      `https://wa.me/553592183654?text=${encodeURIComponent(message)}`;
+
+    window.open(
+      whatsappUrl,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  }
+
+  async function handleServiceContract(service: EnplicaService) {
+    try {
+      const clientId = sessionStorage.getItem(
+        "enplica-client-id",
+      );
+
+      if (!clientId) {
+        window.alert(
+          "Não encontramos os dados da sua sessão. Faça o diagnóstico novamente.",
+        );
+        router.push("/diagnostico");
+        return;
+      }
+
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          clientId,
+          serviceCode: service.code,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        window.alert(
+          data?.error ||
+            "Não foi possível iniciar a contratação.",
+        );
+        return;
+      }
+
+      if (!data?.order?.id) {
+        window.alert(
+          "A contratação foi criada, mas não recebemos o identificador do pedido.",
+        );
+        return;
+      }
+
+      sessionStorage.setItem(
+        "enplica-order-id",
+        data.order.id,
+      );
+
+      router.push(
+        `/checkout?orderId=${encodeURIComponent(data.order.id)}`,
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao iniciar contratação:",
+        error,
+      );
+
+      window.alert(
+        "Ocorreu um erro ao iniciar a contratação. Tente novamente.",
+      );
+    }
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#050507] text-white">
@@ -724,6 +842,219 @@ export default function ResultadoPage() {
           </div>
         </section>
 
+        {/* SERVIÇOS INDICADOS PELO RAIO-X */}
+        {(simServices.length > 0 || nexaServices.length > 0) && (
+          <section className="mt-24">
+            <div className="text-center">
+              <div className="text-[11px] font-semibold tracking-[0.3em] text-[#7DDAFF]">
+                SOLUÇÕES INDICADAS
+              </div>
+
+              <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">
+                Serviços indicados pelo seu Raio-X
+              </h2>
+
+              <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-white/45 sm:text-lg">
+                Com base nas áreas que precisam de tratamento ou atenção,
+                selecionamos procedimentos de gestão e soluções tecnológicas
+                relacionados ao seu diagnóstico.
+              </p>
+            </div>
+
+            {/* SERVIÇOS SIM */}
+            {simServices.length > 0 && (
+              <div className="mt-12">
+                <div className="mb-6 flex items-center gap-4">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#00B8FF]/40 to-transparent" />
+
+                  <div className="text-center">
+                    <div className="text-[10px] font-bold tracking-[0.25em] text-[#FF9D3D]">
+                      SIM
+                    </div>
+
+                    <div className="mt-1 text-sm font-semibold text-[#FFD2A6]">
+                      Procedimentos de Gestão
+                    </div>
+                  </div>
+
+                  <div className="h-px flex-1 bg-white/10" />
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-2">
+                  {simServices.map((service) => (
+                    <div
+                      key={service.code}
+                      className="group relative overflow-hidden rounded-[1.5rem] border border-[#FF8A2B]/20 bg-white/[0.025] p-6 backdrop-blur-xl transition-all duration-300 hover:border-[#FF8A2B]/60 hover:bg-[#FF8A2B]/[0.035] hover:shadow-[0_0_35px_rgba(255,138,43,0.12)] sm:p-7"
+                    >
+                      <div className="relative">
+                        <div className="text-[9px] font-bold tracking-[0.2em] text-white/30">
+                          SIM · {service.code}
+                        </div>
+
+                        <h3 className="mt-3 text-xl font-bold text-white/90">
+                          {service.name}
+                        </h3>
+
+                        <p className="mt-4 text-sm leading-7 text-white/50">
+                          {service.description}
+                        </p>
+
+                        <div className="mt-6 grid grid-cols-2 gap-3">
+                          <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3">
+                            <div className="text-[9px] font-bold tracking-[0.15em] text-white/30">
+                              MODALIDADE
+                            </div>
+
+                            <div className="mt-2 text-sm font-medium text-white/70">
+                              {service.modality}
+                            </div>
+                          </div>
+
+                          <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3">
+                            <div className="text-[9px] font-bold tracking-[0.15em] text-white/30">
+                              DURAÇÃO
+                            </div>
+
+                            <div className="mt-2 text-sm font-medium text-white/70">
+                              {service.duration}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-6 flex items-end justify-between gap-4 border-t border-white/[0.07] pt-6">
+                          <div>
+                            <div className="text-[9px] font-bold tracking-[0.2em] text-white/30">
+                              INVESTIMENTO
+                            </div>
+
+                            <div className="mt-2 text-2xl font-bold text-white">
+                              {formatServicePrice(service)}
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleServiceContract(service)
+                            }
+                            className="rounded-xl bg-gradient-to-r from-[#FF7A18] to-[#FFB347] px-5 py-3 text-xs font-bold tracking-[0.08em] text-white shadow-[0_8px_30px_rgba(255,138,43,0.18)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_12px_35px_rgba(255,138,43,0.32)]"
+                          >
+                            CONTRATAR
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SERVIÇOS NEXA */}
+            {nexaServices.length > 0 && (
+              <div className="mt-14">
+                <div className="mb-6 flex items-center gap-4">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#00B8FF]/40 to-transparent" />
+
+                  <div className="text-center">
+                    <div className="text-[10px] font-bold tracking-[0.25em] text-[#7DDAFF]">
+                      NEXA
+                    </div>
+
+                    <div className="mt-1 text-sm font-semibold text-white/70">
+                      IA · Tecnologia · Automação
+                    </div>
+                  </div>
+
+                  <div className="h-px flex-1 bg-white/10" />
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-2">
+                  {nexaServices.map((service) => {
+                    const isQuote =
+                      service.pricingType === "QUOTE";
+
+                    return (
+                      <div
+                        key={service.code}
+                        className="group relative overflow-hidden rounded-[1.5rem] border border-[#00B8FF]/10 bg-white/[0.025] p-6 backdrop-blur-xl transition-all duration-300 hover:border-[#00B8FF]/30 hover:bg-white/[0.04] sm:p-7"
+                      >
+                        <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-[#00B8FF]/5 blur-3xl transition-all duration-500 group-hover:bg-[#00B8FF]/10" />
+
+                        <div className="relative">
+                          <div className="text-[9px] font-bold tracking-[0.2em] text-[#7DDAFF]">
+                            NEXA · {service.code}
+                          </div>
+
+                          <h3 className="mt-3 text-xl font-bold text-white/90">
+                            {service.name}
+                          </h3>
+
+                          <p className="mt-4 text-sm leading-7 text-white/50">
+                            {service.description}
+                          </p>
+
+                          <div className="mt-6 grid grid-cols-2 gap-3">
+                            <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3">
+                              <div className="text-[9px] font-bold tracking-[0.15em] text-white/30">
+                                MODALIDADE
+                              </div>
+
+                              <div className="mt-2 text-sm font-medium text-white/70">
+                                {service.modality}
+                              </div>
+                            </div>
+
+                            <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3">
+                              <div className="text-[9px] font-bold tracking-[0.15em] text-white/30">
+                                DURAÇÃO
+                              </div>
+
+                              <div className="mt-2 text-sm font-medium text-white/70">
+                                {service.duration}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-6 flex flex-col gap-4 border-t border-white/[0.07] pt-6 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                              <div className="text-[9px] font-bold tracking-[0.2em] text-white/30">
+                                INVESTIMENTO
+                              </div>
+
+                              <div className="mt-2 text-2xl font-bold text-white">
+                                {isQuote && (
+                                  <span className="mr-2 text-sm font-medium text-white/40">
+                                    A partir de
+                                  </span>
+                                )}
+
+                                {formatServicePrice(service)}
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                isQuote
+                                  ? handleServiceQuote(service)
+                                  : handleServiceContract(service)
+                              }
+                              className="rounded-xl bg-gradient-to-r from-[#00B8FF] to-[#8A2EFF] px-5 py-3 text-xs font-bold tracking-[0.08em] text-white shadow-[0_8px_30px_rgba(0,184,255,0.12)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_12px_35px_rgba(0,184,255,0.2)]"
+                            >
+                              {isQuote
+                                ? "SOLICITAR ORÇAMENTO"
+                                : "CONTRATAR"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
         {/* CONSULTA */}
         <section
           id="consulta"
@@ -823,6 +1154,16 @@ export default function ResultadoPage() {
     </main>
   );
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
