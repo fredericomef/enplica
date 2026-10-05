@@ -368,7 +368,7 @@ export default function DiagnosticoPage() {
         </div>
 
         <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-3xl flex-col px-5 py-8 sm:px-8 sm:py-12">
-          <header className="flex items-center justify-between border-b border-white/[0.06] pb-6">
+          <header className="flex items-center justify-between border-b border-white/[0.06] pb-4">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="h-2.5 w-2.5 rounded-full bg-[#00B8FF] shadow-[0_0_20px_#00B8FF]" />
@@ -656,8 +656,8 @@ export default function DiagnosticoPage() {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.018)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.018)_1px,transparent_1px)] bg-[size:70px_70px]" />
       </div>
 
-      <section className="relative z-10 mx-auto flex min-h-screen max-w-4xl flex-col px-5 py-7 sm:px-8 sm:py-10">
-        <header className="flex items-center justify-between border-b border-white/[0.06] pb-6">
+      <section className="relative z-10 mx-auto flex min-h-screen max-w-4xl flex-col px-5 py-4 sm:px-8 sm:py-5">
+        <header className="flex items-center justify-between border-b border-white/[0.06] pb-4">
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="h-2.5 w-2.5 rounded-full bg-[#00B8FF] shadow-[0_0_20px_#00B8FF]" />
@@ -683,7 +683,7 @@ export default function DiagnosticoPage() {
           </div>
         </header>
 
-        <div className="mt-7">
+        <div className="mt-4">
           <div className="grid grid-cols-[1fr_auto] items-center gap-8">
             <div className="text-[10px] font-semibold tracking-[0.15em] text-[#7DDAFF]">
               PERGUNTA {currentQuestion + 1} DE {totalQuestions}
@@ -706,7 +706,7 @@ export default function DiagnosticoPage() {
 
         <div
           key={currentQuestion}
-          className="flex flex-1 flex-col justify-center py-14"
+          className="flex flex-1 flex-col justify-center py-6 sm:py-7"
         >
           <div>
             <div className="inline-flex items-center rounded-full border border-[#00B8FF]/20 bg-[#00B8FF]/5 px-4 py-2">
@@ -720,8 +720,8 @@ export default function DiagnosticoPage() {
             </div>
           </div>
 
-          <div className="mt-8">
-            <div className="mb-4 text-[10px] font-semibold tracking-[0.25em] text-white/25">
+          <div className="mt-5">
+            <div className="mb-3 text-[10px] font-semibold tracking-[0.25em] text-white/25">
               ANÁLISE EMPRESARIAL
             </div>
 
@@ -729,13 +729,13 @@ export default function DiagnosticoPage() {
               {current.question}
             </h1>
 
-            <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/40 sm:text-lg">
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/40 sm:text-base">
               Responda de acordo com a realidade atual do seu negócio.
               Não existem respostas certas ou erradas.
             </p>
           </div>
 
-          <div className="mt-10 grid gap-3">
+          <div className="mt-6 grid gap-2.5">
             {ANSWER_OPTIONS.map((option, index) => (
               <button
                 key={option.value}
@@ -744,9 +744,9 @@ export default function DiagnosticoPage() {
                 onClick={() =>
                   handleAnswer(option.value as AnswerValue)
                 }
-                className="group relative flex min-h-[68px] items-center gap-5 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.025] px-5 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-[#00B8FF]/40 hover:bg-[#00B8FF]/[0.07] hover:shadow-[0_15px_45px_rgba(0,184,255,0.07)] disabled:cursor-not-allowed disabled:opacity-50 sm:px-6"
+                className="group relative flex min-h-[56px] items-center gap-4 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.025] px-5 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-[#00B8FF]/40 hover:bg-[#00B8FF]/[0.07] hover:shadow-[0_15px_45px_rgba(0,184,255,0.07)] disabled:cursor-not-allowed disabled:opacity-50 sm:px-6"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/20 text-xs font-bold text-white/30 transition-all group-hover:border-[#00B8FF]/40 group-hover:bg-[#00B8FF]/10 group-hover:text-[#7DDAFF]">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/20 text-xs font-bold text-white/30 transition-all group-hover:border-[#00B8FF]/40 group-hover:bg-[#00B8FF]/10 group-hover:text-[#7DDAFF]">
                   {index + 1}
                 </div>
 
@@ -754,14 +754,14 @@ export default function DiagnosticoPage() {
                   {option.label}
                 </span>
 
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-sm text-white/25 transition-all group-hover:border-[#00B8FF]/50 group-hover:text-[#7DDAFF]">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 text-sm text-white/25 transition-all group-hover:border-[#00B8FF]/50 group-hover:text-[#7DDAFF]">
                   →
                 </span>
               </button>
             ))}
           </div>
 
-          <div className="mt-8 flex min-h-8 items-center justify-between">
+          <div className="mt-5 flex min-h-7 items-center justify-between">
             {currentQuestion > 0 ? (
               <button
                 type="button"
@@ -781,7 +781,7 @@ export default function DiagnosticoPage() {
           </div>
         </div>
 
-        <footer className="border-t border-white/[0.06] pt-6 text-center">
+        <footer className="border-t border-white/[0.06] pt-4 text-center">
           <div className="text-[9px] font-semibold tracking-[0.28em] text-white/20">
             DIAGNÓSTICO ESTRATÉGICO EMPRESARIAL
           </div>

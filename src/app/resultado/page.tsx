@@ -14,14 +14,14 @@ import { createActionPlan } from "@/domain/diagnostic/action-plan";
 import { DiagnosticRadarChart } from "@/components/diagnostic/DiagnosticRadarChart";
 import {
   ENPLICA_SERVICES,
-  getNexaServicesForAreas,
-  type EnplicaService,
+   type EnplicaService,
 } from "@/domain/services/services.config";
 
 export default function ResultadoPage() {
   const router = useRouter();
 
   const [result, setResult] = useState<DiagnosticResult | null>(null);
+  const [expandedService, setExpandedService] = useState<string | null>(null);
 
   useEffect(() => {
     const storedResult = sessionStorage.getItem(
@@ -161,7 +161,56 @@ export default function ResultadoPage() {
 
   const overallHealth = getOverallHealth(result.percentage);
 
-  const priority = result.priorities[0];
+  /*
+   * PRIORIDADE REAL DO RAIO-X
+   *
+   * A menor pontuação entre as áreas vermelhas define
+   * "TRATAR PRIMEIRO".
+   *
+   * Se houver empate, todas as áreas empatadas entram
+   * na prioridade máxima.
+   */
+  const redAreas = result.areas.filter(
+    (area) => area.status === "TRATAR",
+  );
+
+  const minimumRedScore =
+    redAreas.length > 0
+      ? Math.min(...redAreas.map((area) => area.score))
+      : null;
+
+  const priorityAreas =
+    minimumRedScore !== null
+      ? redAreas.filter(
+          (area) => area.score === minimumRedScore,
+        )
+      : [];
+
+  /*
+   * Se não houver área vermelha, usamos as áreas de atenção.
+   * Também respeitamos empate na menor pontuação.
+   */
+  const attentionCandidates = result.areas.filter(
+    (area) => area.status === "ATENCAO",
+  );
+
+  const minimumAttentionScore =
+    attentionCandidates.length > 0
+      ? Math.min(
+          ...attentionCandidates.map((area) => area.score),
+        )
+      : null;
+
+  const fallbackPriorityAreas =
+    priorityAreas.length > 0
+      ? priorityAreas
+      : minimumAttentionScore !== null
+        ? attentionCandidates.filter(
+            (area) => area.score === minimumAttentionScore,
+          )
+        : [];
+
+  const priority = fallbackPriorityAreas[0] ?? null;
 
   const priorityRecommendation = priority
     ? AREA_RECOMMENDATIONS[priority.areaId]
@@ -185,34 +234,64 @@ export default function ResultadoPage() {
     (group) => group.status === "TRATAR",
   );
 
-  const treatmentAreas = result.areas.filter(
-    (area) => area.status === "TRATAR",
+  /*
+   * SERVIÇOS INDICADOS
+   *
+   * Usamos somente as áreas de maior prioridade.
+   * Isso evita transformar o resultado em um catálogo inteiro.
+   *
+   * Máximo:
+   * - 2 serviços SIM
+   * - 2 serviços NEXA
+   */
+  const serviceAreaIds = fallbackPriorityAreas.map(
+    (area) => area.areaId,
   );
 
-  const attentionAreas = result.areas.filter(
-    (area) => area.status === "ATENCAO",
-  );
-
-  const serviceAreaIds = (
-    treatmentAreas.length > 0
-      ? treatmentAreas
-      : attentionAreas
-  ).map((area) => area.areaId);
-
-  const simServices = ENPLICA_SERVICES.filter(
+  const relatedServices = ENPLICA_SERVICES.filter(
     (service) =>
-      service.provider === "SIM" &&
       service.areas.some((areaId) =>
         serviceAreaIds.includes(areaId),
-      ) &&
-      !["CON-00", "CON-01", "MNT-01", "MNT-02"].includes(
-        service.code,
       ),
   );
 
-  const nexaServices = getNexaServicesForAreas(
-    serviceAreaIds,
-  );
+  /*
+   * Quanto mais áreas prioritárias um serviço atende,
+   * maior a relevância.
+   *
+   * Em caso de empate, mantemos a ordem original do catálogo.
+   */
+  function servicePriorityScore(service: EnplicaService) {
+    return service.areas.filter((areaId) =>
+      serviceAreaIds.includes(areaId),
+    ).length;
+  }
+
+  const simServices = relatedServices
+    .filter(
+      (service) =>
+        service.provider === "SIM" &&
+        !["CON-00", "CON-01", "MNT-01", "MNT-02"].includes(
+          service.code,
+        ),
+    )
+    .sort(
+      (a, b) =>
+        servicePriorityScore(b) -
+        servicePriorityScore(a),
+    )
+    .slice(0, 2);
+
+  const nexaServices = relatedServices
+    .filter(
+      (service) => service.provider === "NEXA",
+    )
+    .sort(
+      (a, b) =>
+        servicePriorityScore(b) -
+        servicePriorityScore(a),
+    )
+    .slice(0, 2);
 
   function formatServicePrice(service: EnplicaService) {
     return new Intl.NumberFormat("pt-BR", {
@@ -855,9 +934,8 @@ export default function ResultadoPage() {
               </h2>
 
               <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-white/45 sm:text-lg">
-                Com base nas áreas que precisam de tratamento ou atenção,
-                selecionamos procedimentos de gestão e soluções tecnológicas
-                relacionados ao seu diagnóstico.
+                Selecionamos as soluções mais relacionadas às áreas
+                que precisam de tratamento ou atenção no seu diagnóstico.
               </p>
             </div>
 
@@ -865,7 +943,7 @@ export default function ResultadoPage() {
             {simServices.length > 0 && (
               <div className="mt-12">
                 <div className="mb-6 flex items-center gap-4">
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#00B8FF]/40 to-transparent" />
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#FF8A2B]/40 to-transparent" />
 
                   <div className="text-center">
                     <div className="text-[10px] font-bold tracking-[0.25em] text-[#FF9D3D]">
@@ -880,71 +958,104 @@ export default function ResultadoPage() {
                   <div className="h-px flex-1 bg-white/10" />
                 </div>
 
-                <div className="grid gap-5 md:grid-cols-2">
-                  {simServices.map((service) => (
-                    <div
-                      key={service.code}
-                      className="group relative overflow-hidden rounded-[1.5rem] border border-[#FF8A2B]/20 bg-white/[0.025] p-6 backdrop-blur-xl transition-all duration-300 hover:border-[#FF8A2B]/60 hover:bg-[#FF8A2B]/[0.035] hover:shadow-[0_0_35px_rgba(255,138,43,0.12)] sm:p-7"
-                    >
-                      <div className="relative">
-                        <div className="text-[9px] font-bold tracking-[0.2em] text-white/30">
-                          SIM · {service.code}
-                        </div>
+                <div className="mx-auto max-w-4xl space-y-3">
+                  {simServices.map((service) => {
+                    const isExpanded =
+                      expandedService === service.code;
 
-                        <h3 className="mt-3 text-xl font-bold text-white/90">
-                          {service.name}
-                        </h3>
-
-                        <p className="mt-4 text-sm leading-7 text-white/50">
-                          {service.description}
-                        </p>
-
-                        <div className="mt-6 grid grid-cols-2 gap-3">
-                          <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3">
-                            <div className="text-[9px] font-bold tracking-[0.15em] text-white/30">
-                              MODALIDADE
-                            </div>
-
-                            <div className="mt-2 text-sm font-medium text-white/70">
-                              {service.modality}
-                            </div>
-                          </div>
-
-                          <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3">
-                            <div className="text-[9px] font-bold tracking-[0.15em] text-white/30">
-                              DURAÇÃO
-                            </div>
-
-                            <div className="mt-2 text-sm font-medium text-white/70">
-                              {service.duration}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mt-6 flex items-end justify-between gap-4 border-t border-white/[0.07] pt-6">
+                    return (
+                      <div
+                        key={service.code}
+                        className={`overflow-hidden rounded-2xl border transition-all duration-300 ${
+                          isExpanded
+                            ? "border-[#FF8A2B]/50 bg-[#FF8A2B]/[0.045] shadow-[0_0_35px_rgba(255,138,43,0.08)]"
+                            : "border-[#FF8A2B]/20 bg-white/[0.025] hover:border-[#FF8A2B]/40"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedService(
+                              isExpanded ? null : service.code,
+                            )
+                          }
+                          className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left sm:px-6"
+                        >
                           <div>
-                            <div className="text-[9px] font-bold tracking-[0.2em] text-white/30">
-                              INVESTIMENTO
+                            <div className="text-[9px] font-bold tracking-[0.2em] text-[#FFB76B]">
+                              SIM · {service.code}
                             </div>
 
-                            <div className="mt-2 text-2xl font-bold text-white">
-                              {formatServicePrice(service)}
-                            </div>
+                            <h3 className="mt-2 text-base font-bold text-white/90 sm:text-lg">
+                              {service.name}
+                            </h3>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleServiceContract(service)
-                            }
-                            className="rounded-xl bg-gradient-to-r from-[#FF7A18] to-[#FFB347] px-5 py-3 text-xs font-bold tracking-[0.08em] text-white shadow-[0_8px_30px_rgba(255,138,43,0.18)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_12px_35px_rgba(255,138,43,0.32)]"
+                          <span
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-lg transition-transform duration-300 ${
+                              isExpanded
+                                ? "rotate-45 border-[#FF8A2B]/40 bg-[#FF8A2B]/10 text-[#FFB347]"
+                                : "border-white/10 bg-white/[0.03] text-white/50"
+                            }`}
                           >
-                            CONTRATAR
-                          </button>
-                        </div>
+                            +
+                          </span>
+                        </button>
+
+                        {isExpanded && (
+                          <div className="border-t border-[#FF8A2B]/15 px-5 pb-5 pt-5 sm:px-6 sm:pb-6">
+                            <p className="text-sm leading-7 text-white/55">
+                              {service.description}
+                            </p>
+
+                            <div className="mt-5 grid grid-cols-2 gap-3">
+                              <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3">
+                                <div className="text-[9px] font-bold tracking-[0.15em] text-white/30">
+                                  MODALIDADE
+                                </div>
+
+                                <div className="mt-2 text-sm font-medium text-white/70">
+                                  {service.modality}
+                                </div>
+                              </div>
+
+                              <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3">
+                                <div className="text-[9px] font-bold tracking-[0.15em] text-white/30">
+                                  DURAÇÃO
+                                </div>
+
+                                <div className="mt-2 text-sm font-medium text-white/70">
+                                  {service.duration}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mt-5 flex flex-col gap-4 border-t border-white/[0.07] pt-5 sm:flex-row sm:items-end sm:justify-between">
+                              <div>
+                                <div className="text-[9px] font-bold tracking-[0.2em] text-white/30">
+                                  INVESTIMENTO
+                                </div>
+
+                                <div className="mt-2 text-2xl font-bold text-white">
+                                  {formatServicePrice(service)}
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleServiceContract(service)
+                                }
+                                className="rounded-xl bg-gradient-to-r from-[#FF7A18] to-[#FFB347] px-5 py-3 text-xs font-bold tracking-[0.08em] text-white shadow-[0_8px_30px_rgba(255,138,43,0.18)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_12px_35px_rgba(255,138,43,0.32)]"
+                              >
+                                CONTRATAR
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -968,85 +1079,114 @@ export default function ResultadoPage() {
                   <div className="h-px flex-1 bg-white/10" />
                 </div>
 
-                <div className="grid gap-5 md:grid-cols-2">
+                <div className="mx-auto max-w-4xl space-y-3">
                   {nexaServices.map((service) => {
+                    const isExpanded =
+                      expandedService === service.code;
+
                     const isQuote =
                       service.pricingType === "QUOTE";
 
                     return (
                       <div
                         key={service.code}
-                        className="group relative overflow-hidden rounded-[1.5rem] border border-[#00B8FF]/10 bg-white/[0.025] p-6 backdrop-blur-xl transition-all duration-300 hover:border-[#00B8FF]/30 hover:bg-white/[0.04] sm:p-7"
+                        className={`overflow-hidden rounded-2xl border transition-all duration-300 ${
+                          isExpanded
+                            ? "border-[#00B8FF]/40 bg-[#00B8FF]/[0.045] shadow-[0_0_35px_rgba(0,184,255,0.08)]"
+                            : "border-[#00B8FF]/15 bg-white/[0.025] hover:border-[#00B8FF]/30"
+                        }`}
                       >
-                        <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-[#00B8FF]/5 blur-3xl transition-all duration-500 group-hover:bg-[#00B8FF]/10" />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedService(
+                              isExpanded ? null : service.code,
+                            )
+                          }
+                          className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left sm:px-6"
+                        >
+                          <div>
+                            <div className="text-[9px] font-bold tracking-[0.2em] text-[#7DDAFF]">
+                              NEXA · {service.code}
+                            </div>
 
-                        <div className="relative">
-                          <div className="text-[9px] font-bold tracking-[0.2em] text-[#7DDAFF]">
-                            NEXA · {service.code}
+                            <h3 className="mt-2 text-base font-bold text-white/90 sm:text-lg">
+                              {service.name}
+                            </h3>
                           </div>
 
-                          <h3 className="mt-3 text-xl font-bold text-white/90">
-                            {service.name}
-                          </h3>
+                          <span
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-lg transition-transform duration-300 ${
+                              isExpanded
+                                ? "rotate-45 border-[#00B8FF]/40 bg-[#00B8FF]/10 text-[#7DDAFF]"
+                                : "border-white/10 bg-white/[0.03] text-white/50"
+                            }`}
+                          >
+                            +
+                          </span>
+                        </button>
 
-                          <p className="mt-4 text-sm leading-7 text-white/50">
-                            {service.description}
-                          </p>
+                        {isExpanded && (
+                          <div className="border-t border-[#00B8FF]/15 px-5 pb-5 pt-5 sm:px-6 sm:pb-6">
+                            <p className="text-sm leading-7 text-white/55">
+                              {service.description}
+                            </p>
 
-                          <div className="mt-6 grid grid-cols-2 gap-3">
-                            <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3">
-                              <div className="text-[9px] font-bold tracking-[0.15em] text-white/30">
-                                MODALIDADE
+                            <div className="mt-5 grid grid-cols-2 gap-3">
+                              <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3">
+                                <div className="text-[9px] font-bold tracking-[0.15em] text-white/30">
+                                  MODALIDADE
+                                </div>
+
+                                <div className="mt-2 text-sm font-medium text-white/70">
+                                  {service.modality}
+                                </div>
                               </div>
 
-                              <div className="mt-2 text-sm font-medium text-white/70">
-                                {service.modality}
+                              <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3">
+                                <div className="text-[9px] font-bold tracking-[0.15em] text-white/30">
+                                  DURAÇÃO
+                                </div>
+
+                                <div className="mt-2 text-sm font-medium text-white/70">
+                                  {service.duration}
+                                </div>
                               </div>
                             </div>
 
-                            <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3">
-                              <div className="text-[9px] font-bold tracking-[0.15em] text-white/30">
-                                DURAÇÃO
+                            <div className="mt-5 flex flex-col gap-4 border-t border-white/[0.07] pt-5 sm:flex-row sm:items-end sm:justify-between">
+                              <div>
+                                <div className="text-[9px] font-bold tracking-[0.2em] text-white/30">
+                                  INVESTIMENTO
+                                </div>
+
+                                <div className="mt-2 text-2xl font-bold text-white">
+                                  {isQuote && (
+                                    <span className="mr-2 text-sm font-medium text-white/40">
+                                      A partir de
+                                    </span>
+                                  )}
+
+                                  {formatServicePrice(service)}
+                                </div>
                               </div>
 
-                              <div className="mt-2 text-sm font-medium text-white/70">
-                                {service.duration}
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  isQuote
+                                    ? handleServiceQuote(service)
+                                    : handleServiceContract(service)
+                                }
+                                className="rounded-xl bg-gradient-to-r from-[#00B8FF] to-[#8A2EFF] px-5 py-3 text-xs font-bold tracking-[0.08em] text-white shadow-[0_8px_30px_rgba(0,184,255,0.12)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_12px_35px_rgba(0,184,255,0.2)]"
+                              >
+                                {isQuote
+                                  ? "SOLICITAR ORÇAMENTO"
+                                  : "CONTRATAR"}
+                              </button>
                             </div>
                           </div>
-
-                          <div className="mt-6 flex flex-col gap-4 border-t border-white/[0.07] pt-6 sm:flex-row sm:items-end sm:justify-between">
-                            <div>
-                              <div className="text-[9px] font-bold tracking-[0.2em] text-white/30">
-                                INVESTIMENTO
-                              </div>
-
-                              <div className="mt-2 text-2xl font-bold text-white">
-                                {isQuote && (
-                                  <span className="mr-2 text-sm font-medium text-white/40">
-                                    A partir de
-                                  </span>
-                                )}
-
-                                {formatServicePrice(service)}
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                isQuote
-                                  ? handleServiceQuote(service)
-                                  : handleServiceContract(service)
-                              }
-                              className="rounded-xl bg-gradient-to-r from-[#00B8FF] to-[#8A2EFF] px-5 py-3 text-xs font-bold tracking-[0.08em] text-white shadow-[0_8px_30px_rgba(0,184,255,0.12)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_12px_35px_rgba(0,184,255,0.2)]"
-                            >
-                              {isQuote
-                                ? "SOLICITAR ORÇAMENTO"
-                                : "CONTRATAR"}
-                            </button>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     );
                   })}
@@ -1055,6 +1195,7 @@ export default function ResultadoPage() {
             )}
           </section>
         )}
+
         {/* CONSULTA */}
         <section
           id="consulta"
