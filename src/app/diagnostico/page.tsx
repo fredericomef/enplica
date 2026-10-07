@@ -368,7 +368,7 @@ export default function DiagnosticoPage() {
         </div>
 
         <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-3xl flex-col px-5 py-8 sm:px-8 sm:py-12">
-          <header className="flex items-center justify-between border-b border-white/[0.06] pb-4">
+          <header className="flex items-center justify-between border-b border-white/[0.06] pb-3 sm:pb-4">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="h-2.5 w-2.5 rounded-full bg-[#00B8FF] shadow-[0_0_20px_#00B8FF]" />
@@ -638,7 +638,7 @@ export default function DiagnosticoPage() {
       <button
         type="button"
         onClick={toggleMusic}
-        className="fixed bottom-5 right-5 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/40 text-lg text-white/60 backdrop-blur-xl transition-all hover:border-[#00B8FF]/40 hover:bg-[#00B8FF]/10 hover:text-[#7DDAFF]"
+        className="fixed bottom-3 right-3 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40 text-lg text-white/60 backdrop-blur-xl transition-all hover:border-[#00B8FF]/40 hover:bg-[#00B8FF]/10 hover:text-[#7DDAFF]"
         aria-label={
           isMusicPlaying
             ? "Pausar música"
@@ -656,8 +656,8 @@ export default function DiagnosticoPage() {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.018)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.018)_1px,transparent_1px)] bg-[size:70px_70px]" />
       </div>
 
-      <section className="relative z-10 mx-auto flex min-h-screen max-w-4xl flex-col px-5 py-4 sm:px-8 sm:py-5">
-        <header className="flex items-center justify-between border-b border-white/[0.06] pb-4">
+      <section className="relative z-10 mx-auto flex min-h-[100dvh] max-w-4xl flex-col px-5 py-3 sm:px-8 sm:py-4">
+        <header className="flex items-center justify-between border-b border-white/[0.06] pb-3 sm:pb-4">
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="h-2.5 w-2.5 rounded-full bg-[#00B8FF] shadow-[0_0_20px_#00B8FF]" />
@@ -683,7 +683,7 @@ export default function DiagnosticoPage() {
           </div>
         </header>
 
-        <div className="mt-4">
+        <div className="mt-3 sm:mt-4">
           <div className="grid grid-cols-[1fr_auto] items-center gap-8">
             <div className="text-[10px] font-semibold tracking-[0.15em] text-[#7DDAFF]">
               PERGUNTA {currentQuestion + 1} DE {totalQuestions}
@@ -694,7 +694,7 @@ export default function DiagnosticoPage() {
             </div>
           </div>
 
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
+          <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/[0.07] sm:mt-3 sm:h-1.5">
             <div
               className="h-full rounded-full bg-gradient-to-r from-[#00B8FF] to-[#8A2EFF] transition-all duration-500 ease-out"
               style={{
@@ -706,7 +706,7 @@ export default function DiagnosticoPage() {
 
         <div
           key={currentQuestion}
-          className="flex flex-1 flex-col justify-center py-6 sm:py-7"
+          className="flex flex-1 flex-col justify-center py-3 sm:py-5 lg:py-6"
         >
           <div>
             <div className="inline-flex items-center rounded-full border border-[#00B8FF]/20 bg-[#00B8FF]/5 px-4 py-2">
@@ -720,22 +720,22 @@ export default function DiagnosticoPage() {
             </div>
           </div>
 
-          <div className="mt-5">
-            <div className="mb-3 text-[10px] font-semibold tracking-[0.25em] text-white/25">
+          <div className="mt-3 sm:mt-5">
+            <div className="mb-2 text-[9px] font-semibold tracking-[0.22em] text-white/25 sm:mb-3 sm:text-[10px] sm:tracking-[0.25em]">
               ANÁLISE EMPRESARIAL
             </div>
 
-            <h1 className="max-w-3xl text-3xl font-bold leading-[1.1] tracking-[-0.035em] sm:text-5xl">
+            <h1 className="max-w-3xl text-2xl font-bold leading-[1.08] tracking-[-0.035em] sm:text-4xl lg:text-5xl">
               {current.question}
             </h1>
 
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/40 sm:text-base">
+            <p className="mt-2 max-w-2xl text-xs leading-relaxed text-white/40 sm:mt-3 sm:text-sm lg:text-base">
               Responda de acordo com a realidade atual do seu negócio.
               Não existem respostas certas ou erradas.
             </p>
           </div>
 
-          <div className="mt-6 grid gap-2.5">
+          <div className="mt-4 grid gap-2 sm:mt-5 lg:mt-6">
             {ANSWER_OPTIONS.map((option, index) => (
               <button
                 key={option.value}
@@ -744,24 +744,24 @@ export default function DiagnosticoPage() {
                 onClick={() =>
                   handleAnswer(option.value as AnswerValue)
                 }
-                className="group relative flex min-h-[56px] items-center gap-4 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.025] px-5 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-[#00B8FF]/40 hover:bg-[#00B8FF]/[0.07] hover:shadow-[0_15px_45px_rgba(0,184,255,0.07)] disabled:cursor-not-allowed disabled:opacity-50 sm:px-6"
+                className="group relative flex min-h-[48px] items-center gap-3 overflow-hidden rounded-xl border border-white/10 bg-white/[0.025] px-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-[#00B8FF]/40 hover:bg-[#00B8FF]/[0.07] hover:shadow-[0_15px_45px_rgba(0,184,255,0.07)] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[52px] sm:gap-4 sm:rounded-2xl sm:px-5 lg:px-6"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/20 text-xs font-bold text-white/30 transition-all group-hover:border-[#00B8FF]/40 group-hover:bg-[#00B8FF]/10 group-hover:text-[#7DDAFF]">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-black/20 text-[11px] font-bold text-white/30 transition-all group-hover:border-[#00B8FF]/40 group-hover:bg-[#00B8FF]/10 group-hover:text-[#7DDAFF] sm:h-8 sm:w-8 sm:rounded-xl sm:text-xs">
                   {index + 1}
                 </div>
 
-                <span className="flex-1 text-base font-medium text-white/70 transition-colors group-hover:text-white sm:text-lg">
+                <span className="flex-1 text-sm font-medium text-white/70 transition-colors group-hover:text-white sm:text-base lg:text-lg">
                   {option.label}
                 </span>
 
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 text-sm text-white/25 transition-all group-hover:border-[#00B8FF]/50 group-hover:text-[#7DDAFF]">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 text-xs text-white/25 transition-all group-hover:border-[#00B8FF]/50 group-hover:text-[#7DDAFF] sm:h-8 sm:w-8 sm:text-sm">
                   →
                 </span>
               </button>
             ))}
           </div>
 
-          <div className="mt-5 flex min-h-7 items-center justify-between">
+          <div className="mt-3 flex min-h-6 items-center justify-between sm:mt-4 sm:min-h-7">
             {currentQuestion > 0 ? (
               <button
                 type="button"
@@ -781,7 +781,7 @@ export default function DiagnosticoPage() {
           </div>
         </div>
 
-        <footer className="border-t border-white/[0.06] pt-4 text-center">
+        <footer className="border-t border-white/[0.06] pt-3 text-center sm:pt-4">
           <div className="text-[9px] font-semibold tracking-[0.28em] text-white/20">
             DIAGNÓSTICO ESTRATÉGICO EMPRESARIAL
           </div>

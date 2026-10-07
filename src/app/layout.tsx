@@ -15,9 +15,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ENPLICA | Raio-X do Negócio",
+  title: "Faça o Raio-X do seu Negócio | Método ENPLICA",
   description:
     "Diagnóstico estratégico das sete áreas fundamentais do seu negócio.",
+  icons: {
+    icon: "/logos/favaconenplica.jpeg",
+  },
+  openGraph: {
+    title: "Faça o Raio-X do seu Negócio | Método ENPLICA",
+    description:
+      "Diagnóstico estratégico das sete áreas fundamentais do seu negócio.",
+    url: "https://planejamentocriativo.com",
+    siteName: "ENPLICA",
+    images: [
+      {
+        url: "https://planejamentocriativo.com/logos/favaconenplica.jpeg",
+        width: 1080,
+        height: 1080,
+        alt: "Faça o Raio-X do seu Negócio | Método ENPLICA",
+      },
+    ],
+    locale: "pt_BR",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
