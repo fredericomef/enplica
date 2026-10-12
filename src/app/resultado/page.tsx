@@ -173,22 +173,13 @@ export default function ResultadoPage() {
   const sortedAreas = useMemo(() => {
     if (!result) return [];
 
-    const statusOrder: Record<string, number> = {
-      TRATAR: 0,
-      ATENCAO: 1,
-      SAUDAVEL: 2,
-    };
+    const areaOrder = ENPLICA_AREAS.map((area) => area.id);
+    const orderIndex = (areaId: AreaResult["areaId"]) =>
+      areaOrder.indexOf(areaId);
 
-    return [...result.areas].sort((a, b) => {
-      const statusDifference =
-        statusOrder[a.status] - statusOrder[b.status];
-
-      if (statusDifference !== 0) {
-        return statusDifference;
-      }
-
-      return a.score - b.score;
-    });
+    return [...result.areas].sort(
+      (a, b) => orderIndex(a.areaId) - orderIndex(b.areaId),
+    );
   }, [result]);
 
   const priorityScore = useMemo(() => {
