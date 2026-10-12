@@ -173,13 +173,11 @@ export default function ResultadoPage() {
   const sortedAreas = useMemo(() => {
     if (!result) return [];
 
-    const areaOrder = ENPLICA_AREAS.map((area) => area.id);
-    const orderIndex = (areaId: AreaResult["areaId"]) =>
-      areaOrder.indexOf(areaId);
-
-    return [...result.areas].sort(
-      (a, b) => orderIndex(a.areaId) - orderIndex(b.areaId),
-    );
+    return ENPLICA_AREAS
+      .map((area) =>
+        result.areas.find((item) => item.areaId === area.id)
+      )
+      .filter((area): area is AreaResult => area !== undefined);
   }, [result]);
 
   const priorityScore = useMemo(() => {
@@ -437,7 +435,7 @@ export default function ResultadoPage() {
             </h2>
 
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-white/45 sm:text-lg">
-              Sua análise está organizada por prioridade. Clique
+              As áreas seguem a sequência do método ENPLICA. Clique
               em uma área para entender o resultado e descobrir
               por onde começar.
             </p>
